@@ -64,13 +64,12 @@ AWS中国区资源监控解决方案主要用来监控中国区资源的使用�
 - git clone 此 repo，自定义修改代码
 - 在你的 AWS 账户下，提前创建好两个桶，假设其中一个 bucket 的名字为 your-bucket-name, 则另一个桶应该命名为 your-bucket-name-cn-north-1。
 前者用于存放 cloudformation template，后者用于存放代码。
-
 - 运行 build 脚本
    ```
    export OUTPUT_BUCKET=your-bucket-name  #template应该在的桶
    export VERSION=v1.0  # 版本号，自定义
    export SOLUTION_NAME=limit-monitor #解决方案的名字，会与版本号一起作为 S3 的前缀
-   ./build-s3-dist.sh $OUTPUT_BUCKET $SOLUTION_NAME $VERSION $OUTPUT_BUCKET
+   deployment/build-s3-dist.sh $OUTPUT_BUCKET $SOLUTION_NAME $VERSION $OUTPUT_BUCKET
 
    ```
 - 将生成的代码以及template分别复制到对应的目录下
