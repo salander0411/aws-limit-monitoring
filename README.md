@@ -11,6 +11,7 @@ AWS中国区资源监控解决方案主要用来监控中国区资源的使用�
 1. 我跟西云申请过，得到的答复是 INTERNAL 没法开启 business support，所以 TA 那部分我现在验证不了，basic plan下，TA 在console上是可以看的，但是API需要premium support
 1. TA 中国区能监控的很少，不知道是因为business support没开还是本来就这么多，待确认
 
+
 ## 监控资源
 本解决方案主要监控两种类型的资源。
 1. EC2 vCPU limits。自 2020 年 3 月起，AWS 的资源限制已经由过去的不同 instance type 的数量限制，转为 vCPU 数量的限制。具体说明请[点击这里查看](https://www.amazonaws.cn/new/2020/amazon-ec2-vcpu-on-demand-instance-limits-aws-china-regions/)。本方案中已经使用了 vCPU 数量来作为判断。
@@ -27,7 +28,7 @@ AWS中国区资源监控解决方案主要用来监控中国区资源的使用�
 此解决方案支持跨账号的监控。可以选择部署在一个账号下，也可以部署在多个账号下。
 
 ### 主账号下
-1. [点击此处]()在北京区启动template。
+1. [点击此处]()在北京区启动[limit-monitor.template](https://cf-templates-1hc09qho4b94m.s3.cn-north-1.amazonaws.com.cn/limit-monitor/v3.0/limit-monitor.template)。
 1. 自定义参数
    - 账号ID列表: 如果只有一个账号，这里留空。如果用于两个或者两个以上的账号，需要填写所有的账号ID，引号包裹，逗号分隔，如 "12345678910","10987654321""
    - 本账号ID : 本账号
@@ -39,7 +40,7 @@ AWS中国区资源监控解决方案主要用来监控中国区资源的使用�
 1. 在模板启动
 
 ### 其他账号下   
-1. [点击此处]在北京区启动spoke.template 
+1. [点击此处]在北京区启动[limit-monitor-spoke.template](https://cf-templates-1hc09qho4b94m.s3.cn-north-1.amazonaws.com.cn/limit-monitor/v3.0/limit-monitor-spoke.template) 
 1. 自定义参数
    - 主账号ID：启动了limit-monitor.template的主账号
    - 本账号ID

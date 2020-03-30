@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Description: (SO0005) - The AWS CloudFormation template for deployment of the cf-templates-1hc09qho4b94m. Version limit-monitor - Spoke Template for vCPU limits
+
+Parameters:
+  ThresholdPercentage:
+    Description: This value is used to set the threshold for WARN messages. For example set this to 0.8 if the threshold percentage is 80%.
+    Type: Number
+    Default: 0.8
+  Account:
+    Type: String
+  Password:
+    Type: String
+  Username:
+    Type: String
+
+Mappings:
+  MetricsMap:
+    Send-Data:
+      SendAnonymousData: "Yes"
+  RefreshRate:
+    CronSchedule:
+      Default: rate(5 minutes) # Change this value to customize the schedule
+  SourceCode:
+    General:
+      S3Bucket: cf-templates-1hc09qho4b94m
+      KeyPrefix: "limit-monitor/v3.0"
+
+Resources:
+  LimitMonitorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Environment:
+        Variables:
+          LOG_LEVEL: 'INFO' #change to WARN, ERROR or DEBUG as needed
+          LIMIT_THRESHOLD: !Ref ThresholdPercentage
+          ACCOUNT: !Ref Account
+          PASSWORD: !Ref Password
+          USERNAME: !Ref Username
+      Code:
+        S3Bucket: !Join ["-", [!FindInMap ["SourceCode", "General", "S3Bucket"], Ref: "AWS::Region"]]
+        S3Key: !Join ["/", [!FindInMap ["SourceCode", "General", "KeyPrefix"],  "service-quotas-checks-service.zip"]]
+      Runtime: nodejs12.x
+      Timeout: 300
+      MemorySize: 1664
+      Description: This function checks for vCPU limits and sends notifiction on WARN and ERROR status
+      Role: !Sub ${LimitMonitorRole.Arn}
+
+  LimitMonitorRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      cfn_nag:
+        rules_to_suppress:
+        - id: W11
+          reason: The actions servicequotas:GetServiceQuota, cloudwatch:GetMTricData, events:PutEvents REQUIRE * resource.
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: Limit_Monitor_Policy
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: !Sub arn:aws-cn:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/*
+          - Effect: Allow
+            Action:
+              - ssm:GetParameters
+              - ssm:GetParameter
+              - cloudwatch:GetMetricData
+              - events:PutEvents
+              - ec2:DescribeRegions
+            Resource: "*"
+
+  LimitCheckSchedule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Limit Monitor Solution - Rule to perform limit checks
+      ScheduleExpression: !FindInMap [RefreshRate, CronSchedule, Default]
+      State: ENABLED
+      Targets:
+        - Arn: !Sub ${LimitMonitorFunction.Arn}
+          Id: LimitSchedule
+
+  LimitCheckInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Sub ${LimitMonitorFunction}
+      Action: lambda:InvokeFunction
+      Principal: !Sub events.amazonaws.com
+      SourceArn: !Sub ${LimitCheckSchedule.Arn}
+
+Outputs:
+  ServiceChecks:
+    Description: service limit checks monitored in the account
+    Value: vCPU
